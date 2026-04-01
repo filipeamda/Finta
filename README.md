@@ -51,7 +51,7 @@ await foreach (var transaction in parser.ParseAsync(stream))
 
 ## 🗺️ Roadmap
 - [x] Core Streaming Engine (.NET 10)
-- [x] Interactive Brokers (IBKR) Support
+- [ ] Interactive Brokers (IBKR) Support
 - [ ] Automated Unit Testing Suite (xUnit)
 - [ ] Revolut Business CSV Parser
 - [ ] FIFO Capital Gains Engine
