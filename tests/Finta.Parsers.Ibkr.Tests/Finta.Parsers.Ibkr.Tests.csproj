@@ -22,4 +22,10 @@
     <ProjectReference Include="..\..\src\Finta.Parsers.Ibkr\Finta.Parsers.Ibkr.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="TestData\**\*.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

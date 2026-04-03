@@ -21,4 +21,10 @@ public record Transaction(
     decimal Commission,
     string Currency,
     string RawData
-);
+)
+{
+    /// <summary>
+    /// A deterministic unique identifier for the transaction based on its financial facts.
+    /// </summary>
+    public string Fingerprint => $"{Date:O}|{Ticker}|{Type}|{Quantity:F8}|{Price:F8}|{Currency}";
+}
