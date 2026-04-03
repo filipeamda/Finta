@@ -20,9 +20,9 @@ Finta is built as a **Modular Monolith**, ensuring strict separation of concerns
 
 ## ⚡ Key Technical Features
 * **Streaming-First Ingestion:** Uses `IAsyncEnumerable<T>` and `Stream` to ensure **O(1) memory complexity**. It processes massive files without significant RAM allocation.
-* **Strict Immutability:** Core domain entities are implemented as C# `records` to prevent accidental side effects during complex financial calculations.
+* **Smart Deduplication:** Includes a deterministic fingerprinting system and a `.Deduplicate()` extension to automatically remove double-counted transactions from overlapping report dates.
+* **Strict Immutability:** Core domain entities are implemented as C# `records` to prevent accidental side effects.
 * **High Precision:** All monetary values use `decimal` to avoid floating-point inaccuracies.
-* **Modern .NET 10 Stack:** Leverages the latest C# features and the new `.slnx` solution format for cleaner version control.
 
 ## 🛠️ Getting Started
 
@@ -36,23 +36,38 @@ cd Finta
 dotnet build
 ```
 
-### Usage Example
+### Usage Example (Professional "Clean Stream")
 ```csharp
 using Finta.Parsers.Ibkr;
+using Finta.Common;
 
 var parser = new IbkrParser();
-using var stream = File.OpenRead("path/to/your/ibkr_report.csv");
+using var stream1 = File.OpenRead("jan_to_mar.csv");
+using var stream2 = File.OpenRead("mar_to_jun.csv");
 
-await foreach (var transaction in parser.ParseAsync(stream))
+// Concatenate and deduplicate overlapping reports in one line
+var transactions = parser.ParseAsync(stream1)
+                         .Concat(parser.ParseAsync(stream2))
+                         .Deduplicate();
+
+await foreach (var t in transactions)
 {
-    Console.WriteLine($"Processed {transaction.Ticker}: {transaction.Quantity} units");   
+    Console.WriteLine($"[{t.Date:d}] {t.Type} {t.Ticker}: {t.Quantity} @ {t.Price}");   
 }
 ```
 
+## 🧰 Developer Utilities
+
+### IBKR Anonymizer (`scripts/ibkr/anonymize.py`)
+A Python utility to prepare test data safely. It scrubs personal identity and scales all monetary values by a consistent random factor, preserving financial ratios and data integrity while protecting confidentiality.
+```bash
+python scripts/ibkr/anonymize.py report1.csv report2.csv
+```
+
 ## 🗺️ Roadmap
-- [ ] Core Streaming Engine (.NET 10)
-- [ ] Interactive Brokers (IBKR) Support
-- [ ] Automated Unit Testing Suite (xUnit)
+- [x] Core Streaming Engine (.NET 10)
+- [x] Interactive Brokers (IBKR) Support
+- [x] Automated Unit Testing Suite (xUnit)
 - [ ] Revolut Business CSV Parser
 - [ ] FIFO Capital Gains Engine
 - [ ] Export to JSON/Excel/SQL
