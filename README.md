@@ -50,7 +50,7 @@ await foreach (var transaction in parser.ParseAsync(stream))
 ```
 
 ## 🗺️ Roadmap
-- [x] Core Streaming Engine (.NET 10)
+- [ ] Core Streaming Engine (.NET 10)
 - [ ] Interactive Brokers (IBKR) Support
 - [ ] Automated Unit Testing Suite (xUnit)
 - [ ] Revolut Business CSV Parser
