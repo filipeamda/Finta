@@ -3,4 +3,7 @@
     <Project Path="src/Finta.Common/Finta.Common.csproj" />
     <Project Path="src/Finta.Parsers.Ibkr/Finta.Parsers.Ibkr.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Finta.Parsers.Ibkr.Tests/Finta.Parsers.Ibkr.Tests.csproj" />
+  </Folder>
 </Solution>
