@@ -1,17 +1,32 @@
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using Finta.Common;
 using Finta.Parsers.Ibkr.Strategies;
 
 namespace Finta.Parsers.Ibkr;
 
-public class IbkrParser : IExchangeParser
+public class IbkrParser(ILoggerFactory loggerFactory) : IExchangeParser
 {
+    private readonly ILogger<IbkrParser> _logger = loggerFactory.CreateLogger<IbkrParser>();
+    private readonly ILoggerFactory _loggerFactory = loggerFactory;
+
     public string ExchangeName => "Interactive Brokers";
 
     public async IAsyncEnumerable<Transaction> ParseAsync(Stream csvStream)
     {
+        _logger.LogInformation("Starting {ExchangeName} parse", ExchangeName);
+        int transactionCount = 0;
+
         // 1. Detect the report format using a "Signature" check
         var format = await DetectFormatAsync(csvStream);
+
+        if (format == IbkrReportFormat.Unknown)
+        {
+            _logger.LogError("Unrecognized {ExchangeName} format. No matching signature found", ExchangeName);
+            throw new UnrecognizedExchangeFormatException(ExchangeName);
+        }
+
+        _logger.LogInformation("Detected format: {Format}", format);
 
         // 2. Reset the stream so the selected parser starts from the beginning
         ResetStream(csvStream);
@@ -20,30 +35,38 @@ public class IbkrParser : IExchangeParser
         switch (format)
         {
             case IbkrReportFormat.ActivityStatement:
-                var activityParser = new IbkrActivityStatementParser();
+                var activityParser = new IbkrActivityStatementParser(_loggerFactory.CreateLogger<IbkrActivityStatementParser>());
                 await foreach (var transaction in activityParser.ParseAsync(csvStream))
                 {
+                    transactionCount++;
                     yield return transaction;
                 }
                 break;
 
-            case IbkrReportFormat.Unknown:
             default:
+                _logger.LogError("Unsupported format: {Format}", format);
                 throw new UnrecognizedExchangeFormatException(ExchangeName);
         }
+
+        _logger.LogInformation("Parse completed. TransactionCount: {TransactionCount}", transactionCount);
     }
 
-    internal static async Task<IbkrReportFormat> DetectFormatAsync(Stream stream)
+    internal async Task<IbkrReportFormat> DetectFormatAsync(Stream stream)
     {
         using var reader = new StreamReader(stream, leaveOpen: true);
         
         // Read the first line to check for structural signature
         var firstLine = await reader.ReadLineAsync();
-        if (string.IsNullOrEmpty(firstLine)) return IbkrReportFormat.Unknown;
+        if (string.IsNullOrEmpty(firstLine))
+        {
+            _logger.LogWarning("File appears to be empty or unreadable");
+            return IbkrReportFormat.Unknown;
+        }
 
         // Signature for "Activity Statement": Starts with "Statement,Header,Field Name,Field Value"
         if (firstLine.StartsWith("Statement,Header,Field Name,Field Value", StringComparison.OrdinalIgnoreCase))
         {
+            _logger.LogInformation("Activity Statement signature detected");
             return IbkrReportFormat.ActivityStatement;
         }
 

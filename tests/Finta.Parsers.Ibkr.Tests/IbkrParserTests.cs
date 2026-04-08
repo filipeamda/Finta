@@ -26,7 +26,7 @@ public class IbkrParserTests
     public async Task ParseAsync_ShouldYieldTransactions(string filePath)
     {
         // Arrange
-        var parser = new IbkrParser();
+        var parser = new IbkrParser(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
         using var stream = File.OpenRead(filePath);
 
         // Act
@@ -58,9 +58,10 @@ public class IbkrParserTests
         // Arrange
         var filePath = Path.Combine(AppContext.BaseDirectory, "TestData", relativePath);
         using var stream = File.OpenRead(filePath);
+        var parser = new IbkrParser(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
 
         // Act
-        var detectedFormat = await IbkrParser.DetectFormatAsync(stream);
+        var detectedFormat = await parser.DetectFormatAsync(stream);
 
         // Assert
         Assert.Equal(expectedFormatName, detectedFormat.ToString());
@@ -70,7 +71,7 @@ public class IbkrParserTests
     public async Task ParseAsync_WithUnknownFormat_ShouldThrowException()
     {
         // Arrange
-        var parser = new IbkrParser();
+        var parser = new IbkrParser(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
         var filePath = Path.Combine(AppContext.BaseDirectory, "TestData", "Unknown", "junk.csv");
         using var stream = File.OpenRead(filePath);
 
@@ -88,7 +89,7 @@ public class IbkrParserTests
     public async Task ParseAsync_WithDeduplication_ShouldRemoveOverlaps()
     {
         // Arrange
-        var parser = new IbkrParser();
+        var parser = new IbkrParser(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
         var filePath = Path.Combine(AppContext.BaseDirectory, "TestData", "ActivityStatement", "activity-statement2025-anonymized.csv");
         
         // Act
